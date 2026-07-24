@@ -768,7 +768,7 @@ function total(){
     rm.textContent = "보유하신 " + myTickets + "장을 모두 배분하셨습니다.";
   } else {
     rm.className = "mx4-remain mx4-show mx4-over";
-    rm.textContent = "보유하신 " + myTickets + "장보다 " + (-left) + "장 많습니다. 구매 수량보다 많으면 무효 처리될 수 있습니다.";
+    rm.textContent = "보유하신 " + myTickets + "장보다 " + (-left) + "장 많습니다. 주문 내역에 해당하는 만큼만 반영됩니다.";
   }
 }
 
@@ -873,7 +873,7 @@ function doneStep(name, a, detail){
   }
   mbody.innerHTML = '<div class="mx4-done"><div class="mx4-ico">'+SVG.lipFill+'</div>'
     + '<h3>응모가 접수됐습니다</h3>'
-    + '<p>마감 전까지는 다시 제출해서 배분을 바꾸실 수 있습니다. 당첨자는 발표일에 개별 연락드립니다.</p>'
+    + '<p>추가로 구매하시면 늘어난 응모권만큼 다시 응모하실 수 있습니다. 당첨자는 발표일에 개별 연락드립니다.</p>'
     + '<div class="mx4-tix" style="margin-top:26px;text-align:left">'
     +   '<div class="mx4-tt">'+esc(name)+' 님의 응모 내역</div>' + lines.join("")
     +   '<div class="mx4-tr" style="border-top:1px solid #F1EBEF;margin-top:8px;padding-top:9px">'
