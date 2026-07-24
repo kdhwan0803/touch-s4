@@ -552,9 +552,7 @@ guard(function(){
   }
 
   box.innerHTML =
-      '<p class="mx4-buyh">이 이벤트는 <em>맥심 터치 카드 시즌 4</em><br>구매 고객만 응모하실 수 있습니다</p>'
-    + '<p class="mx4-buyp">응모권은 구매하신 상품에서 나옵니다.<br>'
-    +   '베이직 1개당 1장, 프리미엄 1개당 5장이 주어집니다.</p>'
+      '<p class="mx4-buyh">이 이벤트는 맥심몰에서 <em>맥심 터치 카드 시즌 4</em>를<br>구매한 고객만 응모하실 수 있습니다</p>'
     + (btns.length ? '<div class="mx4-buybtns">'+btns.join("")+'</div>' : "");
 })();
 
@@ -768,7 +766,7 @@ function total(){
     rm.textContent = "보유하신 " + myTickets + "장을 모두 배분하셨습니다.";
   } else {
     rm.className = "mx4-remain mx4-show mx4-over";
-    rm.textContent = "보유하신 " + myTickets + "장보다 " + (-left) + "장 많습니다. 주문 내역에 해당하는 만큼만 반영됩니다.";
+    rm.textContent = "보유하신 " + myTickets + "장보다 " + (-left) + "장 많습니다. 초과 입력하시면 맥심에서 임의로 모델을 지정해 추첨합니다.";
   }
 }
 
