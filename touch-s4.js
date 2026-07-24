@@ -483,7 +483,7 @@ function openDetail(i){
     strip = '<div class="mx4-strip" id="mx4-strip">'+t.join("")+'</div>';
   }
   mbody.innerHTML = '<div class="mx4-detail"><div class="mx4-stage" id="mx4-stage">'
-    + (has ? "" : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Black Han Sans,sans-serif;font-size:56px;color:#F5B4D3">'+esc(m.name.charAt(0))+'</div>')
+    + (has ? "" : '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:Gothic A1,sans-serif;font-weight:800;font-size:56px;color:#F5B4D3">'+esc(m.name.charAt(0))+'</div>')
     + '</div><div class="mx4-info"><div class="mx4-iname">'+esc(m.name)+'</div>'
     + '<span class="mx4-iitem">'+esc(m.item)+' &#183; 사인 + 립마크</span>'
     + (m.comment ? '<p class="mx4-icom">'+esc(m.comment)+'</p>' : "")
@@ -556,6 +556,82 @@ guard(function(){
     + '<p class="mx4-buyp">응모권은 구매하신 상품에서 나옵니다.<br>'
     +   '베이직 1개당 1장, 프리미엄 1개당 5장이 주어집니다.</p>'
     + (btns.length ? '<div class="mx4-buybtns">'+btns.join("")+'</div>' : "");
+})();
+
+/* ══ 응모권 계산기 ══ */
+/* 게시판이 data- 속성을 지우는 경우가 있어, 화면을 자바스크립트로 직접 만듭니다 */
+var myTickets = 0;
+
+guard(function(){
+  var box = pick("mx4-calc","mx4-calc");
+  if (!box) return;
+
+  function rowHtml(label, per, cls){
+    return '<div class="mx4-crow">'
+      + '<div class="mx4-cnm"><b>'+label+'</b><i>1개당 응모권 '+per+'장</i></div>'
+      + '<div class="mx4-step">'
+      +   '<button type="button" class="mx4-sb mx4-minus">&#8722;</button>'
+      +   '<input type="text" class="mx4-cq mx4-q'+cls+'" inputmode="numeric" value="0" maxlength="3" aria-label="'+label+' 수">'
+      +   '<button type="button" class="mx4-sb mx4-plus">&#43;</button>'
+      + '</div></div>';
+  }
+
+  box.innerHTML =
+      rowHtml("베이직 박스", 1, "b")
+    + rowHtml("프리미엄 박스", 5, "p")
+    + '<div class="mx4-cres"><span class="mx4-cresl">사용하실 수 있는 응모권</span>'
+    +   '<span class="mx4-cresv mx4-qtotal">0</span><span class="mx4-cresu">장</span></div>'
+    + '<p class="mx4-cnudge mx4-qnudge"></p>';
+
+  var qb    = box.querySelector(".mx4-qb");
+  var qp    = box.querySelector(".mx4-qp");
+  var out   = box.querySelector(".mx4-qtotal");
+  var nudge = box.querySelector(".mx4-qnudge");
+
+  function num(el){
+    var n = parseInt(String(el.value).replace(/[^0-9]/g,""), 10);
+    return (n > 0) ? Math.min(n, 999) : 0;
+  }
+
+  function calc(){
+    var b = num(qb), p = num(qp);
+    qb.value = b; qp.value = p;
+    myTickets = b + p * 5;
+    out.textContent = myTickets;
+
+    if (b === 0 && p === 0){
+      nudge.innerHTML = "구매하신 박스 수를 넣어보세요.";
+    } else if (p === 0){
+      nudge.innerHTML = "프리미엄 박스를 <b>1개</b> 더하시면 응모권이 <b>5장</b> 늘어납니다. "
+        + "지금 " + myTickets + "장에서 <b>" + (myTickets + 5) + "장</b>이 됩니다.";
+    } else {
+      nudge.innerHTML = "이 응모권을 원하는 모델에게 나눠 담으시면 됩니다. "
+        + "한 명에게 <b>" + myTickets + "장</b>을 몰아넣으셔도 됩니다.";
+    }
+  }
+
+  /* 버튼은 눌린 위치를 기준으로 판단합니다 (속성에 의존하지 않습니다) */
+  box.addEventListener("click", function(e){
+    var btn = e.target.closest ? e.target.closest(".mx4-sb") : null;
+    if (!btn) return;
+    var row = btn.closest(".mx4-crow");
+    if (!row) return;
+    var inp = row.querySelector(".mx4-cq");
+    if (!inp) return;
+    var d = btn.classList.contains("mx4-plus") ? 1 : -1;
+    var n = num(inp) + d;
+    inp.value = n < 0 ? 0 : n;
+    calc();
+  });
+
+  box.addEventListener("input", function(e){
+    if (e.target.classList && e.target.classList.contains("mx4-cq")) calc();
+  });
+  box.addEventListener("focusin", function(e){
+    if (e.target.classList && e.target.classList.contains("mx4-cq")) e.target.select();
+  });
+
+  calc();
 })();
 
 /* ══ 응모하러 가기 버튼 ══ */
@@ -672,8 +748,28 @@ function readAlloc(){
   return { counts: out, sum: sum };
 }
 function total(){
+  var sum = readAlloc().sum;
   var el = document.getElementById("mx4-sum");
-  if (el) el.textContent = readAlloc().sum;
+  if (el) el.textContent = sum;
+
+  var rm = document.getElementById("mx4-remain");
+  if (!rm) return;
+
+  // 계산기를 쓰지 않았으면 굳이 표시하지 않습니다
+  if (!myTickets){ rm.className = "mx4-remain"; rm.textContent = ""; return; }
+
+  var left = myTickets - sum;
+  rm.classList.add("mx4-show");
+  if (left > 0){
+    rm.className = "mx4-remain mx4-show mx4-left";
+    rm.textContent = "보유하신 " + myTickets + "장 중 " + left + "장이 남았습니다.";
+  } else if (left === 0){
+    rm.className = "mx4-remain mx4-show mx4-ok";
+    rm.textContent = "보유하신 " + myTickets + "장을 모두 배분하셨습니다.";
+  } else {
+    rm.className = "mx4-remain mx4-show mx4-over";
+    rm.textContent = "보유하신 " + myTickets + "장보다 " + (-left) + "장 많습니다. 구매 수량보다 많으면 무효 처리될 수 있습니다.";
+  }
 }
 
 function submitEntry(){
