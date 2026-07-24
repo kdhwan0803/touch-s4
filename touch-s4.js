@@ -1,7 +1,12 @@
 /* STELLA 2026 MAXIM Touch Season 4 - 실착 사인 굿즈 응모 */
 (function(){
 var CONFIG = {
- "scriptUrl": "",
+ "scriptUrl": "https://script.google.com/macros/s/AKfycbyO49vCIsjSFdIHw-Fv-4aFEC-0oCIa28UPC7AWWOPosDWu7KtjNtRwx57EAwWRW9Id/exec",
+ "formUrl": "",
+ "entryName": "",
+ "entryPhone": "",
+ "entryTotal": "",
+ "entryDetail": "",
  "deadline": "2026-08-23T23:59:59+09:00",
  "entryUrl": "",
  "buyBasicUrl": "",
@@ -708,38 +713,58 @@ function submitEntry(){
     return;
   }
 
-  if (!CONFIG.scriptUrl){
+  if (!CONFIG.formUrl && !CONFIG.scriptUrl){
     var e0 = document.getElementById("mx4-err");
-    e0.textContent = "응모 접수 주소가 설정되지 않았습니다. 생성기에서 Apps Script 주소를 입력해주세요.";
+    e0.textContent = "응모 접수 주소가 설정되지 않았습니다. 생성기에서 접수 주소를 입력해주세요.";
     e0.classList.add("mx4-show"); return;
   }
 
   var names = [], detail = [];
   for (var i=0;i<CONFIG.models.length;i++){
     names.push(CONFIG.models[i].name);
-    if (a.counts[i] > 0) detail.push(CONFIG.models[i].name + " " + a.counts[i]);
+    if (a.counts[i] > 0) detail.push(CONFIG.models[i].name + ":" + a.counts[i]);
   }
+  var detailText = detail.join(" / ");
 
   btn.disabled = true; btn.textContent = "접수 중";
 
+  function failed(){
+    var eb = document.getElementById("mx4-err");
+    eb.textContent = "접수에 실패했습니다. 잠시 후 다시 시도해주세요. 계속 같은 문제가 생기면 고객센터로 문의해주세요.";
+    eb.classList.add("mx4-show");
+    btn.disabled = false; btn.textContent = "응모 접수하기";
+  }
+
+  /* ── 구글 폼 방식 ── */
+  if (CONFIG.formUrl){
+    var fd = new URLSearchParams();
+    if (CONFIG.entryName)   fd.append(CONFIG.entryName, name);
+    if (CONFIG.entryPhone)  fd.append(CONFIG.entryPhone, phone);
+    if (CONFIG.entryTotal)  fd.append(CONFIG.entryTotal, String(a.sum));
+    if (CONFIG.entryDetail) fd.append(CONFIG.entryDetail, detailText);
+
+    // 구글 폼은 응답을 돌려주지 않아 성공 여부를 읽을 수 없습니다.
+    // 전송이 끝나면 접수된 것으로 처리합니다.
+    fetch(CONFIG.formUrl, { method:"POST", mode:"no-cors", body:fd })
+      .then(function(){ doneStep(name, a, detail); })
+      .catch(function(){ failed(); });
+    return;
+  }
+
+  /* ── Apps Script 방식 ── */
   fetch(CONFIG.scriptUrl, { method:"POST", body:new URLSearchParams({
     name: name, phone: phone,
     total: String(a.sum),
     names: names.join("|"),
     counts: a.counts.join("|"),
-    detail: detail.join(" / ")
+    detail: detailText
   })})
   .then(function(r){ return r.json(); })
   .then(function(res){
     if (res && res.result === "success") doneStep(name, a, detail);
     else throw new Error("fail");
   })
-  .catch(function(){
-    var eb = document.getElementById("mx4-err");
-    eb.textContent = "접수에 실패했습니다. 잠시 후 다시 시도해주세요. 계속 같은 문제가 생기면 고객센터로 문의해주세요.";
-    eb.classList.add("mx4-show");
-    btn.disabled = false; btn.textContent = "응모 접수하기";
-  });
+  .catch(failed);
 }
 
 function doneStep(name, a, detail){
